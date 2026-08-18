@@ -1,234 +1,533 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SW2.5 セッション補助ツール</title>
-<style>
-  :root {
-    --bg-color: #f4f5f7;
-    --card-bg: #ffffff;
-    --primary: #2b4c7e;
-    --accent: #d9534f;
-    --text: #333333;
-  }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text);
-    margin: 0;
-    padding: 16px;
-    touch-action: manipulation;
-  }
-  .container {
-    max-width: 900px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
-  }
-  .card {
-    background: var(--card-bg);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  }
-  h2 {
-    margin-top: 0;
-    color: var(--primary);
-    border-bottom: 2px solid var(--primary);
-    padding-bottom: 6px;
-    font-size: 1.25rem;
-  }
-  /* ダイスセクション */
-  .dice-box {
-    text-align: center;
-  }
-  .btn-large {
-    width: 100%;
-    padding: 20px;
-    font-size: 1.6rem;
-    font-weight: bold;
-    color: #fff;
-    background-color: var(--primary);
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    margin-bottom: 12px;
-    box-shadow: 0 4px 0 #1b3254;
-    transition: transform 0.05s;
-  }
-  .btn-large:active {
-    transform: translateY(4px);
-    box-shadow: none;
-  }
-  .dice-result {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: var(--accent);
-    min-height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .dice-detail {
-    font-size: 1rem;
-    color: #666;
-  }
-  /* ステータスカウンター */
-  .status-group {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .status-val {
-    font-size: 1.8rem;
-    font-weight: bold;
-    width: 80px;
-    text-align: center;
-  }
-  .btn-counter {
-    min-width: 48px;
-    min-height: 48px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    border: 1px solid #ccc;
-    background: #e9ecef;
-    border-radius: 8px;
-    margin: 0 4px;
-    cursor: pointer;
-  }
-  /* 入力フィールド */
-  .input-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-  .field-group {
-    display: flex;
-    flex-direction: column;
-  }
-  label {
-    font-size: 0.85rem;
-    font-weight: bold;
-    margin-bottom: 4px;
-    color: #555;
-  }
-  input[type="text"], input[type="number"] {
-    padding: 12px;
-    font-size: 1.1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SW2.5 キャラクターシート補助アプリ</title>
+    <style>
+        body {
+            font-family: 'Yu Gothic', sans-serif;
+            background-color: #fdfcf8;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid #aaa;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .left-column, .right-column {
+            flex: 1;
+            padding: 20px;
+            box-sizing: border-box;
+            border-right: 1px solid #aaa;
+        }
+
+        .right-column {
+            border-right: none;
+        }
+
+        h2 {
+            border-bottom: 2px solid #555;
+            padding-bottom: 5px;
+            margin-top: 0;
+            font-size: 1.1em;
+        }
+
+        .input-group {
+            margin-bottom: 8px;
+        }
+
+        .input-group label {
+            display: inline-block;
+            width: 130px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            border: 1px solid #bbb;
+            padding: 3px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 90px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            resize: vertical;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            border: 1px solid #aaa;
+            font-size: 0.9em;
+        }
+
+        th, td {
+            border: 1px solid #aaa;
+            padding: 3px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        /* 詳細配置スタイル */
+        /* 左側 */
+        .left-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .left-header-left {
+            flex: 1;
+        }
+
+        .sw25-logo {
+            text-align: center;
+            flex: 0 0 90px;
+        }
+
+        .ability-scores-table td input {
+            width: 35px;
+        }
+
+        .check-package-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .languages-table th:first-child, .languages-table td:first-child {
+            width: auto;
+        }
+
+        .background-info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* 右側 */
+        .right-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .movement-info {
+            display: flex;
+            gap: 8px;
+        }
+
+        .classes-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .classes-group label {
+            font-weight: normal;
+        }
+
+        .classes-group input[type="checkbox"] {
+            margin-right: 3px;
+        }
+
+        .classes-group input[type="number"] {
+            width: 35px;
+        }
+
+        .hp-mp-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .hp-mp-box {
+            flex: 1;
+            border: 1px solid #aaa;
+            padding: 8px;
+        }
+
+        .power-table-detailed th, .power-table-detailed td {
+            width: 25px;
+        }
+
+        .power-table-detailed th:first-child, .power-table-detailed td:first-child {
+            width: auto;
+        }
+
+        .copyright-footer {
+            text-align: right;
+            font-size: 0.7em;
+            margin-top: 15px;
+            border-top: 1px solid #aaa;
+            padding-top: 3px;
+        }
+
+    </style>
 </head>
 <body>
 
 <div class="container">
-  <!-- ダイス・判定エリア -->
-  <div class="card dice-box">
-    <h2>ダイスロール (2d6)</h2>
-    <button class="btn-large" onclick="roll2d6()">2d6 を振る</button>
-    <div class="dice-result" id="diceResult">-</div>
-    <div class="dice-detail" id="diceDetail">ダイスボタンを押してください</div>
-  </div>
+    <!-- 左側カラム -->
+    <div class="left-column">
+        <div class="left-header">
+            <div class="left-header-left">
+                <div class="input-group">
+                    <label>キャラクター名 / プレイヤー名</label>
+                    <input type="text" style="width: 200px;">
+                </div>
+                <div class="input-group">
+                    <label>種族</label>
+                    <input type="text">
+                    <label style="width: 30px;">年齢</label>
+                    <input type="number" style="width: 40px;">
+                    <label style="width: 30px;">性別</label>
+                    <input type="text" style="width: 40px;">
+                </div>
+                <div class="input-group">
+                    <label>種族特徴</label>
+                    <input type="text" style="width: 200px;">
+                </div>
+            </div>
+            <div class="sw25-logo">
+                <div style="font-size: 1.5em; font-weight: bold;">SW<br>2.5</div>
+                <div style="font-size: 0.8em;">RPG</div>
+            </div>
+        </div>
 
-  <!-- ステータス管理（HP/MP） -->
-  <div class="card">
-    <h2>HP / MP 管理</h2>
-    <div class="status-group">
-      <div><strong>HP</strong></div>
-      <button class="btn-counter" onclick="changeVal('hp', -5)">-5</button>
-      <button class="btn-counter" onclick="changeVal('hp', -1)">-1</button>
-      <span class="status-val" id="hpVal">30</span>
-      <button class="btn-counter" onclick="changeVal('hp', 1)">+1</button>
-      <button class="btn-counter" onclick="changeVal('hp', 5)">+5</button>
-    </div>
-    <div class="status-group">
-      <div><strong>MP</strong></div>
-      <button class="btn-counter" onclick="changeVal('mp', -5)">-5</button>
-      <button class="btn-counter" onclick="changeVal('mp', -1)">-1</button>
-      <span class="status-val" id="mpVal">20</span>
-      <button class="btn-counter" onclick="changeVal('mp', 1)">+1</button>
-      <button class="btn-counter" onclick="changeVal('mp', 5)">+5</button>
-    </div>
-  </div>
+        <h2>能力値</h2>
+        <table class="ability-scores-table">
+            <tr>
+                <th>基礎能力値</th>
+                <th>基礎</th>
+                <th>補正</th>
+                <th>成長</th>
+                <th>能力値</th>
+                <th>ボーナス</th>
+            </tr>
+            <tr>
+                <td rowspan="2">技</td>
+                <td><input type="number"></td>
+                <td>A <input type="number"></td>
+                <td><input type="number"></td>
+                <td>器用度</td>
+                <td><input type="number"></td>
+            </tr>
+            <tr>
+                <td><input type="number"></td>
+                <td>B <input type="number"></td>
+                <td><input type="number"></td>
+                <td>敏捷度</td>
+                <td><input type="number"></td>
+            </tr>
+            <tr>
+                <td rowspan="2">体</td>
+                <td><input type="number"></td>
+                <td>C <input type="number"></td>
+                <td><input type="number"></td>
+                <td>筋力</td>
+                <td><input type="number"></td>
+            </tr>
+            <tr>
+                <td><input type="number"></td>
+                <td>D <input type="number"></td>
+                <td><input type="number"></td>
+                <td>生命力</td>
+                <td><input type="number"></td>
+            </tr>
+            <tr>
+                <td rowspan="2">心</td>
+                <td><input type="number"></td>
+                <td>E <input type="number"></td>
+                <td><input type="number"></td>
+                <td>知力</td>
+                <td><input type="number"></td>
+            </tr>
+            <tr>
+                <td><input type="number"></td>
+                <td>F <input type="number"></td>
+                <td><input type="number"></td>
+                <td>精神力</td>
+                <td><input type="number"></td>
+            </tr>
+        </table>
 
-  <!-- キャラクター基本情報 -->
-  <div class="card">
-    <h2>キャラクター概要</h2>
-    <div class="input-grid">
-      <div class="field-group">
-        <label>キャラクター名</label>
-        <input type="text" placeholder="名前を入力">
-      </div>
-      <div class="field-group">
-        <label>種族</label>
-        <input type="text" placeholder="例: 人間">
-      </div>
-      <div class="field-group">
-        <label>防護点</label>
-        <input type="number" value="0">
-      </div>
-      <div class="field-group">
-        <label>回避力</label>
-        <input type="number" value="0">
-      </div>
-    </div>
-  </div>
+        <h2>技能・判定パッケージ</h2>
+        <div class="check-package-group">
+            <input type="checkbox"> スカウト
+            <input type="checkbox"> レンジャー
+            <input type="checkbox"> 敏捷
+            <input type="checkbox"> 知力
+            <input type="checkbox"> 生命力
+            <input type="checkbox"> 精神力
+            <input type="checkbox"> 知識
+        </div>
 
-  <!-- 簡易能力値ボーナス計算 -->
-  <div class="card">
-    <h2>能力値ボーナス計算</h2>
-    <div class="input-grid">
-      <div class="field-group">
-        <label>器用度</label>
-        <input type="number" id="stat-dex" value="12" oninput="calcBonus('dex')">
-      </div>
-      <div class="field-group">
-        <label>器用ボーナス</label>
-        <input type="text" id="bonus-dex" value="+2" readonly>
-      </div>
-      <div class="field-group">
-        <label>筋力</label>
-        <input type="number" id="stat-str" value="18" oninput="calcBonus('str')">
-      </div>
-      <div class="field-group">
-        <label>筋力ボーナス</label>
-        <input type="text" id="bonus-str" value="+3" readonly>
-      </div>
+        <h2>技能</h2>
+        <table class="skills-table">
+            <tr>
+                <th>技能名</th>
+                <th>レベル</th>
+            </tr>
+            <tr>
+                <td><input type="text"></td>
+                <td><input type="number"></td>
+            </tr>
+            <tr>
+                <td><input type="text"></td>
+                <td><input type="number"></td>
+            </tr>
+            <!-- 必要に応じて行を追加 -->
+        </table>
+
+        <h2>戦闘特技</h2>
+        <table class="combat-feats-table">
+            <tr>
+                <th>特技名</th>
+                <th>効果</th>
+            </tr>
+            <tr>
+                <td><input type="text"></td>
+                <td><input type="text"></td>
+            </tr>
+            <tr>
+                <td><input type="text"></td>
+                <td><input type="text"></td>
+            </tr>
+            <!-- 必要に応じて行を追加 -->
+        </table>
+
+        <h2>言語、経歴、プロフィール</h2>
+        <div class="background-info-group">
+            <div class="input-group">
+                <label>生まれ</label>
+                <input type="text">
+            </div>
+            <textarea placeholder="経歴、プロフィール"></textarea>
+            <table class="languages-table">
+                <tr>
+                    <th>言語</th>
+                    <th>会話</th>
+                    <th>読文</th>
+                </tr>
+                <tr>
+                    <td>共通語</td>
+                    <td><input type="checkbox"></td>
+                    <td><input type="checkbox"></td>
+                </tr>
+                <tr>
+                    <td><input type="text"></td>
+                    <td><input type="checkbox"></td>
+                    <td><input type="checkbox"></td>
+                </tr>
+            </table>
+        </div>
+
+        <h2>経験点、自動失敗、名誉点、ランク、冒険者レベル</h2>
+        <div class="input-group">
+            <label>経験点</label>
+            <input type="number">
+            <label>自動失敗</label>
+            <input type="number">
+        </div>
+        <div class="input-group">
+            <label>名誉点</label>
+            <input type="number">
+            <label>ランク</label>
+            <input type="text">
+        </div>
+        <div class="input-group">
+            <label>冒険者レベル</label>
+            <input type="number">
+        </div>
     </div>
-  </div>
+
+    <!-- 右側カラム -->
+    <div class="right-column">
+        <div class="right-header">
+            <div class="movement-info">
+                <div class="input-group">
+                    <label>制限移動</label>
+                    <input type="number"> m
+                </div>
+                <div class="input-group">
+                    <label>移動力</label>
+                    <input type="number"> m
+                </div>
+                <div class="input-group">
+                    <label>全力移動</label>
+                    <input type="number"> m
+                </div>
+            </div>
+        </div>
+
+        <h2>クラス・技能レベル</h2>
+        <div class="classes-group">
+            <div><input type="checkbox"> セージ</div>
+            <div><input type="checkbox"> ライダー</div>
+            <div><input type="checkbox"> ファイター</div>
+            <div><input type="checkbox"> グラップラー</div>
+            <div><input type="checkbox"> フェンサー</div>
+            <div><input type="checkbox"> シューター</div>
+            <div>レベル <input type="number"></div>
+            <div>レベル <input type="number"></div>
+            <div>レベル <input type="number"></div>
+        </div>
+
+        <h2>武器</h2>
+        <table>
+            <tr>
+                <th>武器名/備考</th>
+                <th>用法</th>
+                <th>必筋</th>
+                <th>命中修正</th>
+                <th>C値</th>
+                <th>追加ダメージ</th>
+            </tr>
+            <tr>
+                <td><input type="text"></td>
+                <td><input type="text"></td>
+                <td><input type="number"></td>
+                <td><input type="number"></td>
+                <td><input type="number"></td>
+                <td><input type="number"></td>
+            </tr>
+            <!-- 必要に応じて行を追加 -->
+        </table>
+
+        <h2>防具・魔力・戦闘力</h2>
+        <table>
+            <tr>
+                <th>防具名/備考</th>
+                <th>必筋</th>
+                <th>回避修正</th>
+                <th>防護点</th>
+            </tr>
+            <tr>
+                <td><input type="text"></td>
+                <td><input type="number"></td>
+                <td><input type="number"></td>
+                <td><input type="number"></td>
+            </tr>
+        </table>
+        <div class="input-group">
+            <label>魔力</label>
+            <input type="number">
+            <label>合計回避力</label>
+            <input type="number">
+            <label>合計防護点</label>
+            <input type="number">
+        </div>
+
+        <h2>HP・MP・抵抗力</h2>
+        <div class="hp-mp-group">
+            <div class="hp-mp-box">
+                <div>HP</div>
+                <input type="number"> / <input type="number">
+                <div style="font-size: 0.8em; margin-top: 5px;">HP = 冒険者レベル×3 ＋ 生命力</div>
+                <div>生命抵抗力</div>
+                <input type="number">
+            </div>
+            <div class="hp-mp-box">
+                <div>MP</div>
+                <input type="number"> / <input type="number">
+                <div style="font-size: 0.8em; margin-top: 5px;">MP = 魔法レベル（最高）＋ 精神力</div>
+                <div>精神抵抗力</div>
+                <input type="number">
+            </div>
+        </div>
+
+        <h2>所持金・預金・借金</h2>
+        <div class="input-group">
+            <label>所持金</label>
+            <input type="number">
+            <label>預金</label>
+            <input type="number">
+            <label>借金</label>
+            <input type="number">
+        </div>
+
+        <h2>所持アイテムなど</h2>
+        <div><input type="checkbox"> 冒険者セット</div>
+        <textarea placeholder="所持アイテム（1行1アイテム）"></textarea>
+
+        <h2>威力表</h2>
+        <table class="power-table-detailed">
+            <tr>
+                <th>威力表</th>
+                <th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
+            </tr>
+            <tr>
+                <td>0</td>
+                <td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>2</td><td>2</td><td>3</td><td>3</td><td>4</td><td>4</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td>0</td><td>1</td><td>1</td><td>2</td><td>2</td><td>3</td><td>4</td><td>4</td><td>5</td><td>5</td><td>6</td>
+            </tr>
+            <tr>
+                <td>10</td>
+                <td>1</td><td>1</td><td>2</td><td>3</td><td>3</td><td>4</td><td>5</td><td>5</td><td>6</td><td>7</td><td>7</td>
+            </tr>
+            <tr>
+                <td>15</td>
+                <td>1</td><td>2</td><td>3</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>8</td><td>9</td>
+            </tr>
+            <tr>
+                <td>20</td>
+                <td>2</td><td>3</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>10</td>
+            </tr>
+            <tr>
+                <td>25</td>
+                <td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td>
+            </tr>
+            <tr>
+                <td>30</td>
+                <td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td>
+            </tr>
+            <tr>
+                <td>35</td>
+                <td>3</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td>
+            </tr>
+            <tr>
+                <td>40</td>
+                <td>4</td><td>5</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td>
+            </tr>
+            <tr>
+                <td>45</td>
+                <td>4</td><td>6</td><td>7</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td>
+            </tr>
+            <tr>
+                <td>50</td>
+                <td>5</td><td>6</td><td>8</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td>
+            </tr>
+        </table>
+
+        <h2>消耗品チェック欄</h2>
+        <textarea placeholder="消耗品（1行1アイテム）"></textarea>
+
+        <div class="copyright-footer">
+            「ソード・ワールド2.5」キャラクターシート ©2018 GROUP SNE / KADOKAWA
+        </div>
+    </div>
 </div>
-
-<script>
-  // 2d6ロール処理
-  function roll2d6() {
-    const d1 = Math.floor(Math.random() * 6) + 1;
-    const d2 = Math.floor(Math.random() * 6) + 1;
-    const sum = d1 + d2;
-    
-    document.getElementById('diceResult').textContent = sum;
-    document.getElementById('diceDetail').textContent = `出目: [${d1}, ${d2}] ${sum === 2 ? '(自動失敗)' : sum === 12 ? '(自動成功)' : ''}`;
-  }
-
-  // HP/MP カウンター処理
-  function changeVal(type, delta) {
-    const el = document.getElementById(type + 'Val');
-    let val = parseInt(el.textContent, 10) + delta;
-    el.textContent = val;
-  }
-
-  // ボーナス自動計算 (能力値 / 6 の切り捨て)
-  function calcBonus(stat) {
-    const score = parseInt(document.getElementById('stat-' + stat).value, 10) || 0;
-    const bonus = Math.floor(score / 6);
-    document.getElementById('bonus-' + stat).value = (bonus >= 0 ? '+' : '') + bonus;
-  }
-</script>
 
 </body>
 </html>
