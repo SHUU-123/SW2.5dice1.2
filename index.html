@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SW2.5 バフ・デバフ＆キャラ管理ツール v2</title>
+<title>SW2.5 バフ・デバフ＆ラウンド管理ツール</title>
 <style>
   :root {
     --bg-color: #f4f6f9;
@@ -45,9 +45,41 @@
     border-bottom: 2px solid #eef2f5;
     padding-bottom: 8px;
   }
+  
+  /* ラウンド管理エリア */
+  .round-box {
+    text-align: center;
+    background: #eef2f5;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .round-count {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: var(--primary);
+  }
+  .round-ctrls {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .btn-round {
+    flex: 1;
+    padding: 10px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .btn-next { background: var(--primary); color: #fff; }
+  .btn-reset { background: #6c757d; color: #fff; }
+
   .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
     gap: 10px;
   }
   .stat-box {
@@ -58,12 +90,11 @@
     text-align: center;
   }
   .stat-title { font-size: 0.8rem; color: #6c757d; font-weight: bold; }
-  .stat-value { font-size: 1.8rem; font-weight: bold; color: var(--primary); margin: 2px 0; }
+  .stat-value { font-size: 1.6rem; font-weight: bold; color: var(--primary); margin: 2px 0; }
   .stat-diff { font-size: 0.8rem; font-weight: bold; }
   .diff-plus { color: var(--active); }
   .diff-minus { color: var(--accent); }
 
-  /* カスタム調整ボタン */
   .custom-ctrl {
     display: flex;
     justify-content: center;
@@ -97,7 +128,6 @@
     border-radius: 6px;
   }
 
-  /* キャラ保存エリア */
   .char-save-bar {
     display: flex;
     gap: 8px;
@@ -153,9 +183,7 @@
     padding: 0 2px;
     cursor: pointer;
   }
-  .btn-del-char:hover { color: var(--accent); }
 
-  /* トグルボタン */
   .category-title {
     font-size: 0.85rem;
     font-weight: bold;
@@ -195,8 +223,20 @@
 <body>
 
 <div class="container">
-  <!-- 左カラム: キャラ選択 & 基礎ステータス -->
+  <!-- 左カラム: キャラ選択 & ラウンド機能 & 基礎ステータス -->
   <div>
+    <!-- ラウンド経過管理 -->
+    <div class="card">
+      <h2>ラウンド管理</h2>
+      <div class="round-box">
+        <div class="round-count"><span id="round-num">1</span> <small style="font-size:1rem;">R目</small></div>
+        <div class="round-ctrls">
+          <button class="btn-round btn-next" onclick="nextRound()">次ラウンド (+1)</button>
+          <button class="btn-round btn-reset" onclick="resetRound()">リセット (1R)</button>
+        </div>
+      </div>
+    </div>
+
     <!-- キャラ保存管理 -->
     <div class="card">
       <h2>キャラクターデータ</h2>
@@ -204,14 +244,13 @@
         <input type="text" id="char-name" placeholder="キャラクター名">
         <button class="btn-main" onclick="saveCharacter()">保存</button>
       </div>
-      <div class="char-list" id="char-chip-list">
-        <!-- 保存済みキャラチップがここに生成されます -->
-      </div>
+      <div class="char-list" id="char-chip-list"></div>
     </div>
 
     <!-- 基礎ステータス設定 -->
     <div class="card">
       <h2>基礎ステータス (基準値)</h2>
+      <div class="input-group"><label>最大HP (新規)</label><input type="number" id="base-hp" value="30" onchange="calculate()"></div>
       <div class="input-group"><label>命中力</label><input type="number" id="base-acc" value="6" onchange="calculate()"></div>
       <div class="input-group"><label>回避力</label><input type="number" id="base-eva" value="5" onchange="calculate()"></div>
       <div class="input-group"><label>防護点</label><input type="number" id="base-arm" value="3" onchange="calculate()"></div>
@@ -227,6 +266,16 @@
     <div class="card">
       <h2>計算結果</h2>
       <div class="stat-grid">
+        <!-- 最大HP -->
+        <div class="stat-box">
+          <div class="stat-title">最大HP</div>
+          <div class="stat-value" id="res-hp">30</div>
+          <div class="stat-diff" id="diff-hp">±0</div>
+          <div class="custom-ctrl">
+            <button class="btn-step" onclick="adjCustom('hp', -1)">-1</button>
+            <button class="btn-step" onclick="adjCustom('hp', 1)">+1</button>
+          </div>
+        </div>
         <!-- 命中 -->
         <div class="stat-box">
           <div class="stat-title">命中力</div>
@@ -292,9 +341,14 @@
 
     <!-- バフ・デバフ切替ボタン -->
     <div class="card">
-      <h2>能力・効果の切り替え</h2>
+      <h2>能力・特技の切り替え</h2>
+
+      <div class="category-title">【自動習得の常時特技】(画像読取)</div>
+      <div class="toggle-grid">
+        <button class="btn-toggle" data-mods='{"hp":15}'>タフネス<br><small>(最大HP+15)</small></button>
+      </div>
       
-      <div class="category-title">【練技】(画像データ)</div>
+      <div class="category-title">【練技】(画像読取)</div>
       <div class="toggle-grid">
         <button class="btn-toggle" data-mods='{"acc":1}'>キャッツアイ<br><small>(命中+1)</small></button>
         <button class="btn-toggle" data-mods='{"eva":1}'>ガゼルフット<br><small>(回避+1)</small></button>
@@ -328,10 +382,10 @@
 </div>
 
 <script>
-  let customMods = { acc: 0, eva: 0, arm: 0, fort: 0, will: 0, dmg: 0 };
+  let customMods = { hp: 0, acc: 0, eva: 0, arm: 0, fort: 0, will: 0, dmg: 0 };
   let currentSelectedChar = null;
+  let currentRound = 1;
 
-  // 初期化イベント設定
   document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('.btn-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -343,18 +397,26 @@
     calculate();
   });
 
-  // カスタム調整の加減算
+  // ラウンド機能
+  function nextRound() {
+    currentRound++;
+    document.getElementById('round-num').innerText = currentRound;
+  }
+  function resetRound() {
+    currentRound = 1;
+    document.getElementById('round-num').innerText = currentRound;
+  }
+
+  // ステータス調整
   function adjCustom(stat, delta) {
     customMods[stat] += delta;
     calculate();
   }
 
-  // ステータス全体計算
   function calculate() {
-    const stats = ['acc', 'eva', 'arm', 'fort', 'will', 'dmg'];
-    let mods = { acc: 0, eva: 0, arm: 0, fort: 0, will: 0, dmg: 0 };
+    const stats = ['hp', 'acc', 'eva', 'arm', 'fort', 'will', 'dmg'];
+    let mods = { hp: 0, acc: 0, eva: 0, arm: 0, fort: 0, will: 0, dmg: 0 };
 
-    // トグルボタンの補正を集計
     document.querySelectorAll('.btn-toggle.active').forEach(btn => {
       const data = JSON.parse(btn.dataset.mods || '{}');
       for (let k in data) {
@@ -362,12 +424,10 @@
       }
     });
 
-    // カスタム調整の値を合算
     stats.forEach(s => {
       mods[s] += customMods[s];
     });
 
-    // 表示更新
     stats.forEach(s => {
       const base = parseInt(document.getElementById(`base-${s}`).value) || 0;
       const mod = mods[s];
@@ -382,7 +442,7 @@
     });
   }
 
-  // --- キャラクターデータのローカル保存管理 ---
+  // ローカルストレージ保存管理
   function getSavedData() {
     return JSON.parse(localStorage.getItem('sw25_characters') || '{}');
   }
@@ -394,6 +454,7 @@
 
     const data = getSavedData();
     data[name] = {
+      hp: parseInt(document.getElementById('base-hp').value) || 0,
       acc: parseInt(document.getElementById('base-acc').value) || 0,
       eva: parseInt(document.getElementById('base-eva').value) || 0,
       arm: parseInt(document.getElementById('base-arm').value) || 0,
@@ -413,6 +474,7 @@
 
     currentSelectedChar = name;
     document.getElementById('char-name').value = name;
+    document.getElementById('base-hp').value = data[name].hp || 30;
     document.getElementById('base-acc').value = data[name].acc;
     document.getElementById('base-eva').value = data[name].eva;
     document.getElementById('base-arm').value = data[name].arm;
