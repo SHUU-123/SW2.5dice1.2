@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SW2.5 セッション補助ツール</title>
+<style>
+  :root {
+    --bg-color: #f4f5f7;
+    --card-bg: #ffffff;
+    --primary: #2b4c7e;
+    --accent: #d9534f;
+    --text: #333333;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text);
+    margin: 0;
+    padding: 16px;
+    touch-action: manipulation;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+  h2 {
+    margin-top: 0;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 6px;
+    font-size: 1.25rem;
+  }
+  /* ダイスセクション */
+  .dice-box {
+    text-align: center;
+  }
+  .btn-large {
+    width: 100%;
+    padding: 20px;
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: var(--primary);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 0 #1b3254;
+    transition: transform 0.05s;
+  }
+  .btn-large:active {
+    transform: translateY(4px);
+    box-shadow: none;
+  }
+  .dice-result {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--accent);
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dice-detail {
+    font-size: 1rem;
+    color: #666;
+  }
+  /* ステータスカウンター */
+  .status-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .status-val {
+    font-size: 1.8rem;
+    font-weight: bold;
+    width: 80px;
+    text-align: center;
+  }
+  .btn-counter {
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: 1px solid #ccc;
+    background: #e9ecef;
+    border-radius: 8px;
+    margin: 0 4px;
+    cursor: pointer;
+  }
+  /* 入力フィールド */
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .field-group {
+    display: flex;
+    flex-direction: column;
+  }
+  label {
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #555;
+  }
+  input[type="text"], input[type="number"] {
+    padding: 12px;
+    font-size: 1.1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- ダイス・判定エリア -->
+  <div class="card dice-box">
+    <h2>ダイスロール (2d6)</h2>
+    <button class="btn-large" onclick="roll2d6()">2d6 を振る</button>
+    <div class="dice-result" id="diceResult">-</div>
+    <div class="dice-detail" id="diceDetail">ダイスボタンを押してください</div>
+  </div>
+
+  <!-- ステータス管理（HP/MP） -->
+  <div class="card">
+    <h2>HP / MP 管理</h2>
+    <div class="status-group">
+      <div><strong>HP</strong></div>
+      <button class="btn-counter" onclick="changeVal('hp', -5)">-5</button>
+      <button class="btn-counter" onclick="changeVal('hp', -1)">-1</button>
+      <span class="status-val" id="hpVal">30</span>
+      <button class="btn-counter" onclick="changeVal('hp', 1)">+1</button>
+      <button class="btn-counter" onclick="changeVal('hp', 5)">+5</button>
+    </div>
+    <div class="status-group">
+      <div><strong>MP</strong></div>
+      <button class="btn-counter" onclick="changeVal('mp', -5)">-5</button>
+      <button class="btn-counter" onclick="changeVal('mp', -1)">-1</button>
+      <span class="status-val" id="mpVal">20</span>
+      <button class="btn-counter" onclick="changeVal('mp', 1)">+1</button>
+      <button class="btn-counter" onclick="changeVal('mp', 5)">+5</button>
+    </div>
+  </div>
+
+  <!-- キャラクター基本情報 -->
+  <div class="card">
+    <h2>キャラクター概要</h2>
+    <div class="input-grid">
+      <div class="field-group">
+        <label>キャラクター名</label>
+        <input type="text" placeholder="名前を入力">
+      </div>
+      <div class="field-group">
+        <label>種族</label>
+        <input type="text" placeholder="例: 人間">
+      </div>
+      <div class="field-group">
+        <label>防護点</label>
+        <input type="number" value="0">
+      </div>
+      <div class="field-group">
+        <label>回避力</label>
+        <input type="number" value="0">
+      </div>
+    </div>
+  </div>
+
+  <!-- 簡易能力値ボーナス計算 -->
+  <div class="card">
+    <h2>能力値ボーナス計算</h2>
+    <div class="input-grid">
+      <div class="field-group">
+        <label>器用度</label>
+        <input type="number" id="stat-dex" value="12" oninput="calcBonus('dex')">
+      </div>
+      <div class="field-group">
+        <label>器用ボーナス</label>
+        <input type="text" id="bonus-dex" value="+2" readonly>
+      </div>
+      <div class="field-group">
+        <label>筋力</label>
+        <input type="number" id="stat-str" value="18" oninput="calcBonus('str')">
+      </div>
+      <div class="field-group">
+        <label>筋力ボーナス</label>
+        <input type="text" id="bonus-str" value="+3" readonly>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 2d6ロール処理
+  function roll2d6() {
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
+    const sum = d1 + d2;
+    
+    document.getElementById('diceResult').textContent = sum;
+    document.getElementById('diceDetail').textContent = `出目: [${d1}, ${d2}] ${sum === 2 ? '(自動失敗)' : sum === 12 ? '(自動成功)' : ''}`;
+  }
+
+  // HP/MP カウンター処理
+  function changeVal(type, delta) {
+    const el = document.getElementById(type + 'Val');
+    let val = parseInt(el.textContent, 10) + delta;
+    el.textContent = val;
+  }
+
+  // ボーナス自動計算 (能力値 / 6 の切り捨て)
+  function calcBonus(stat) {
+    const score = parseInt(document.getElementById('stat-' + stat).value, 10) || 0;
+    const bonus = Math.floor(score / 6);
+    document.getElementById('bonus-' + stat).value = (bonus >= 0 ? '+' : '') + bonus;
+  }
+</script>
+
+</body>
+</html>
