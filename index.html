@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SW2.5 バフ・デバフ＆ラウンド管理ツール</title>
+<title>SW2.5 バフ・デバフ＆タイマー自動解除ツール</title>
 <style>
   :root {
     --bg-color: #f4f6f9;
@@ -196,6 +196,7 @@
     gap: 8px;
   }
   .btn-toggle {
+    position: relative;
     padding: 10px 6px;
     font-size: 0.85rem;
     font-weight: bold;
@@ -206,7 +207,7 @@
     cursor: pointer;
     user-select: none;
     touch-action: manipulation;
-    min-height: 48px;
+    min-height: 52px;
     line-height: 1.2;
   }
   .btn-toggle.active {
@@ -217,6 +218,22 @@
   .btn-toggle.debuff.active {
     background: var(--accent);
     border-color: var(--accent);
+  }
+  .badge-timer {
+    display: none;
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ffc107;
+    color: #000;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .btn-toggle.active .badge-timer {
+    display: inline-block;
   }
 </style>
 </head>
@@ -250,7 +267,7 @@
     <!-- 基礎ステータス設定 -->
     <div class="card">
       <h2>基礎ステータス (基準値)</h2>
-      <div class="input-group"><label>最大HP (新規)</label><input type="number" id="base-hp" value="30" onchange="calculate()"></div>
+      <div class="input-group"><label>最大HP</label><input type="number" id="base-hp" value="30" onchange="calculate()"></div>
       <div class="input-group"><label>命中力</label><input type="number" id="base-acc" value="6" onchange="calculate()"></div>
       <div class="input-group"><label>回避力</label><input type="number" id="base-eva" value="5" onchange="calculate()"></div>
       <div class="input-group"><label>防護点</label><input type="number" id="base-arm" value="3" onchange="calculate()"></div>
@@ -266,7 +283,6 @@
     <div class="card">
       <h2>計算結果</h2>
       <div class="stat-grid">
-        <!-- 最大HP -->
         <div class="stat-box">
           <div class="stat-title">最大HP</div>
           <div class="stat-value" id="res-hp">30</div>
@@ -276,7 +292,6 @@
             <button class="btn-step" onclick="adjCustom('hp', 1)">+1</button>
           </div>
         </div>
-        <!-- 命中 -->
         <div class="stat-box">
           <div class="stat-title">命中力</div>
           <div class="stat-value" id="res-acc">6</div>
@@ -286,7 +301,6 @@
             <button class="btn-step" onclick="adjCustom('acc', 1)">+1</button>
           </div>
         </div>
-        <!-- 回避 -->
         <div class="stat-box">
           <div class="stat-title">回避力</div>
           <div class="stat-value" id="res-eva">5</div>
@@ -296,7 +310,6 @@
             <button class="btn-step" onclick="adjCustom('eva', 1)">+1</button>
           </div>
         </div>
-        <!-- 防護点 -->
         <div class="stat-box">
           <div class="stat-title">防護点</div>
           <div class="stat-value" id="res-arm">3</div>
@@ -306,7 +319,6 @@
             <button class="btn-step" onclick="adjCustom('arm', 1)">+1</button>
           </div>
         </div>
-        <!-- 生命抵抗 -->
         <div class="stat-box">
           <div class="stat-title">生命抵抗</div>
           <div class="stat-value" id="res-fort">5</div>
@@ -316,7 +328,6 @@
             <button class="btn-step" onclick="adjCustom('fort', 1)">+1</button>
           </div>
         </div>
-        <!-- 精神抵抗 -->
         <div class="stat-box">
           <div class="stat-title">精神抵抗</div>
           <div class="stat-value" id="res-will">5</div>
@@ -326,7 +337,6 @@
             <button class="btn-step" onclick="adjCustom('will', 1)">+1</button>
           </div>
         </div>
-        <!-- 追加D -->
         <div class="stat-box">
           <div class="stat-title">追加D</div>
           <div class="stat-value" id="res-dmg">4</div>
@@ -339,43 +349,43 @@
       </div>
     </div>
 
-    <!-- バフ・デバフ切替ボタン -->
+    <!-- バフ・デバフ切替ボタン (data-durationで持続Rを指定) -->
     <div class="card">
       <h2>能力・特技の切り替え</h2>
 
-      <div class="category-title">【自動習得の常時特技】(画像読取)</div>
+      <div class="category-title">【自動習得の常時特技】</div>
       <div class="toggle-grid">
-        <button class="btn-toggle" data-mods='{"hp":15}'>タフネス<br><small>(最大HP+15)</small></button>
+        <button class="btn-toggle" data-mods='{"hp":15}'>タフネス<br><small>(常時 HP+15)</small></button>
       </div>
       
-      <div class="category-title">【練技】(画像読取)</div>
+      <div class="category-title">【練技】(画像効果時間準拠)</div>
       <div class="toggle-grid">
-        <button class="btn-toggle" data-mods='{"acc":1}'>キャッツアイ<br><small>(命中+1)</small></button>
-        <button class="btn-toggle" data-mods='{"eva":1}'>ガゼルフット<br><small>(回避+1)</small></button>
-        <button class="btn-toggle" data-mods='{"dmg":2}'>マッスルベアー<br><small>(追加D+2)</small></button>
-        <button class="btn-toggle" data-mods='{"arm":2}'>ビートルスキン<br><small>(防護点+2)</small></button>
-        <button class="btn-toggle" data-mods='{"acc":1}'>デーモンフィンガー<br><small>(命中+1)</small></button>
-        <button class="btn-toggle" data-mods='{"dmg":1}'>ジャイアントアーム<br><small>(追加D+1)</small></button>
-        <button class="btn-toggle" data-mods='{"eva":1}'>ケンタウロスレッグ<br><small>(回避+1)</small></button>
-        <button class="btn-toggle" data-mods='{"arm":4}'>トロールバイタル<br><small>(防護点+4)</small></button>
+        <button class="btn-toggle" data-mods='{"acc":1}' data-duration="3">キャッツアイ<br><small>(命中+1 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"eva":1}' data-duration="3">ガゼルフット<br><small>(回避+1 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"dmg":2}' data-duration="3">マッスルベアー<br><small>(追加D+2 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"arm":2}' data-duration="3">ビートルスキン<br><small>(防護点+2 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"acc":1}' data-duration="1">デーモンフィンガー<br><small>(命中+1 / 1R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"dmg":1}' data-duration="1">ジャイアントアーム<br><small>(追加D+1 / 1R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"eva":1}' data-duration="1">ケンタウロスレッグ<br><small>(回避+1 / 1R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"arm":4}' data-duration="3">トロールバイタル<br><small>(防護点+4 / 3R)</small><span class="badge-timer"></span></button>
       </div>
 
       <div class="category-title">【魔法・呪歌・戦闘特技】</div>
       <div class="toggle-grid">
-        <button class="btn-toggle" data-mods='{"acc":1}'>モラル<br><small>(命中+1)</small></button>
-        <button class="btn-toggle" data-mods='{"will":1}'>レジスタンス<br><small>(精神抵抗+1)</small></button>
-        <button class="btn-toggle" data-mods='{"arm":1}'>フィールドプロテクション<br><small>(防護点+1)</small></button>
-        <button class="btn-toggle" data-mods='{"dmg":2}'>ヴォーパルウェポン<br><small>(追加D+2)</small></button>
-        <button class="btn-toggle" data-mods='{"fort":1,"will":1}'>ガッツ/ポーション<br><small>(抵抗+1)</small></button>
-        <button class="btn-toggle" data-mods='{"acc":1,"eva":1}'>ファングズ<br><small>(命中/回避+1)</small></button>
+        <button class="btn-toggle" data-mods='{"acc":1}' data-duration="3">モラル<br><small>(命中+1 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"will":1}' data-duration="3">レジスタンス<br><small>(精神抵抗+1 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"arm":1}' data-duration="3">フィールドプロテクション<br><small>(防護点+1 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"dmg":2}' data-duration="3">ヴォーパルウェポン<br><small>(追加D+2 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"fort":1,"will":1}' data-duration="3">ガッツ/ポーション<br><small>(抵抗+1 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle" data-mods='{"acc":1,"eva":1}' data-duration="3">ファングズ<br><small>(命中/回避+1 / 3R)</small><span class="badge-timer"></span></button>
       </div>
 
       <div class="category-title">【状態異常・デバフ】</div>
       <div class="toggle-grid">
-        <button class="btn-toggle debuff" data-mods='{"acc":-2,"eva":-2}'>転倒<br><small>(命中-2/回避-2)</small></button>
-        <button class="btn-toggle debuff" data-mods='{"acc":-2,"eva":-2}'>暗闇<br><small>(命中-2/回避-2)</small></button>
-        <button class="btn-toggle debuff" data-mods='{"will":-2}'>マインドボウ<br><small>(精神抵抗-2)</small></button>
-        <button class="btn-toggle debuff" data-mods='{"dmg":-2}'>ウェポンブレイク<br><small>(追加D-2)</small></button>
+        <button class="btn-toggle debuff" data-mods='{"acc":-2,"eva":-2}' data-duration="3">転倒<br><small>(命中-2/回避-2 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle debuff" data-mods='{"acc":-2,"eva":-2}' data-duration="3">暗闇<br><small>(命中-2/回避-2 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle debuff" data-mods='{"will":-2}' data-duration="3">マインドボウ<br><small>(精神抵抗-2 / 3R)</small><span class="badge-timer"></span></button>
+        <button class="btn-toggle debuff" data-mods='{"dmg":-2}' data-duration="3">ウェポンブレイク<br><small>(追加D-2 / 3R)</small><span class="badge-timer"></span></button>
       </div>
     </div>
   </div>
@@ -390,6 +400,14 @@
     document.querySelectorAll('.btn-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
         btn.classList.toggle('active');
+        if (btn.classList.contains('active')) {
+          if (btn.dataset.duration) {
+            btn.dataset.rem = btn.dataset.duration;
+            updateBadge(btn);
+          }
+        } else {
+          delete btn.dataset.rem;
+        }
         calculate();
       });
     });
@@ -397,17 +415,39 @@
     calculate();
   });
 
-  // ラウンド機能
+  function updateBadge(btn) {
+    const badge = btn.querySelector('.badge-timer');
+    if (badge && btn.dataset.rem) {
+      badge.innerText = `残り${btn.dataset.rem}R`;
+    }
+  }
+
+  // ラウンド進行と自動解除ロジック
   function nextRound() {
     currentRound++;
     document.getElementById('round-num').innerText = currentRound;
+
+    document.querySelectorAll('.btn-toggle.active').forEach(btn => {
+      if (btn.dataset.duration && btn.dataset.rem) {
+        let rem = parseInt(btn.dataset.rem) - 1;
+        if (rem <= 0) {
+          btn.classList.remove('active');
+          delete btn.dataset.rem;
+        } else {
+          btn.dataset.rem = rem;
+          updateBadge(btn);
+        }
+      }
+    });
+
+    calculate();
   }
+
   function resetRound() {
     currentRound = 1;
     document.getElementById('round-num').innerText = currentRound;
   }
 
-  // ステータス調整
   function adjCustom(stat, delta) {
     customMods[stat] += delta;
     calculate();
@@ -442,7 +482,6 @@
     });
   }
 
-  // ローカルストレージ保存管理
   function getSavedData() {
     return JSON.parse(localStorage.getItem('sw25_characters') || '{}');
   }
